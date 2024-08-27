@@ -5,8 +5,12 @@ let remoteStream;
 let peerConnection;
 
 const socket = io();
+const room = prompt("Enter room name:");  // Prompt user to enter a room name
+if (room) {
+  socket.emit('join-room', room);  // Send the room name to the server
+}
 
-// STUN servers for WebRTC connection (required for most setups)
+// STUN servers for WebRTC connection
 const configuration = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
 };
@@ -39,7 +43,7 @@ function startCall() {
   peerConnection.ontrack = (event) => {
     if (!remoteStream) {
       remoteStream = new MediaStream();
-      document.getElementById('remoteVideo').srcObject = remoteStream;
+      remoteVideo.srcObject = remoteStream;
     }
     remoteStream.addTrack(event.track);
   };
@@ -47,7 +51,7 @@ function startCall() {
   // Handle ICE candidates
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
-      socket.emit('ice-candidate', event.candidate);
+      socket.emit('ice-candidate', event.candidate, room);  // Include room when emitting
     }
   };
 
@@ -55,7 +59,7 @@ function startCall() {
   peerConnection.createOffer()
     .then(offer => {
       peerConnection.setLocalDescription(offer);
-      socket.emit('offer', offer);
+      socket.emit('offer', offer, room);  // Include room when emitting
     });
 }
 
@@ -66,14 +70,14 @@ socket.on('offer', (offer) => {
   peerConnection.ontrack = (event) => {
     if (!remoteStream) {
       remoteStream = new MediaStream();
-      document.getElementById('remoteVideo').srcObject = remoteStream;
+      remoteVideo.srcObject = remoteStream;
     }
     remoteStream.addTrack(event.track);
   };
 
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
-      socket.emit('ice-candidate', event.candidate);
+      socket.emit('ice-candidate', event.candidate, room);  // Include room when emitting
     }
   };
 
@@ -85,7 +89,7 @@ socket.on('offer', (offer) => {
   peerConnection.createAnswer()
     .then(answer => {
       peerConnection.setLocalDescription(answer);
-      socket.emit('answer', answer);
+      socket.emit('answer', answer, room);  // Include room when emitting
     });
 });
 

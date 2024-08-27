@@ -11,23 +11,27 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
   console.log('A user connected');
 
-  socket.on('offer', (offer) => {
-    socket.broadcast.emit('offer', offer);
+  socket.on('join-room', (room) => {
+    socket.join(room);
+    console.log(`User joined room: ${room}`);
   });
 
-  socket.on('answer', (answer) => {
-    socket.broadcast.emit('answer', answer);
+  socket.on('offer', (offer, room) => {
+    socket.to(room).emit('offer', offer);  // Emit to everyone in the room except the sender
   });
 
-  socket.on('ice-candidate', (candidate) => {
-    socket.broadcast.emit('ice-candidate', candidate);
+  socket.on('answer', (answer, room) => {
+    socket.to(room).emit('answer', answer);  // Emit to everyone in the room except the sender
+  });
+
+  socket.on('ice-candidate', (candidate, room) => {
+    socket.to(room).emit('ice-candidate', candidate);  // Emit to everyone in the room except the sender
   });
 
   socket.on('disconnect', () => {
     console.log('A user disconnected');
   });
 });
-
 
 server.listen(3000, () => {
   console.log('Server is running on port 3000');
