@@ -2,11 +2,45 @@
 <html>
   <head>
     <title>WebRTC Video Chat</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      #remoteVideo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        background-color: black;
+      }
+      #localVideo {
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        bottom: 20px;
+        right: 20px;
+        border: 2px solid #fff;
+        object-fit: cover;
+        background-color: black;
+      }
+      button {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        padding: 10px;
+        font-size: 16px;
+        z-index: 10;
+      }
+    </style>
   </head>
   <body>
-    <h1>Video Chat</h1>
-    <video id="localVideo" autoplay playsinline></video>
     <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay muted playsinline></video>
     <button id="startCall">Start Call</button>
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
