@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>WebRTC Video Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
       body {
         margin: 0;
@@ -9,24 +10,49 @@
         overflow: hidden;
         font-family: Arial, sans-serif;
       }
-      #remoteVideo {
+      /* Parent container that holds the remote video and the video container */
+.parentContainer {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Remote video will take the remaining space */
+#remoteVideo {
+  flex: 1; /* This makes the remote video take up the remaining width */
+  height: 100vh;
+  object-fit: cover;
+  background-color: black;
+}
+
+/* Video container positioned on the right with fixed width */
+.videoContainer {
+  width: 200px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-y: auto; /* Scrollable if video elements exceed the height of the container */
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+  padding: 10px;
+}
+
+/* Ensure each video takes up the full width of the container and has some margin */
+.thumbnail {
+  width: 100%;
+  margin-bottom: 10px; /* Adds spacing between videos */
+  background-color: black;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+      .top-button-container {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        object-fit: cover;
-        background-color: black;
-      }
-      #localVideo {
-        position: absolute;
-        width: 150px;
-        height: 150px;
-        bottom: 20px;
-        right: 20px;
-        border: 2px solid #fff;
-        object-fit: cover;
-        background-color: black;
+        top: 0px;
+        left: 20px;
+        display: flex;
+        gap: 10px; /* Adds space between buttons */
       }
       .button-container {
         position: absolute;
@@ -43,8 +69,23 @@
     </style>
   </head>
   <body>
+    <div class="top-button-container">
+      <button id="shareScreen">Share Screen</button>
+    </div>
+
+    <!-- Parent container holding the remote video and the video container -->
+  <div class="parentContainer">
+    <!-- Fullscreen remote video (takes remaining width) -->
     <video id="remoteVideo" autoplay playsinline></video>
-    <video id="localVideo" autoplay muted playsinline></video>
+
+    <!-- Video container with one video per row -->
+    <div class="videoContainer">
+      <video id="remoteScreen" class="thumbnail" autoplay playsinline></video>
+      <video id="localScreen" class="thumbnail" autoplay muted playsinline></video>
+      <video id="localVideo" class="thumbnail" autoplay muted playsinline></video>
+    </div>
+  </div>
+
 
     <div class="button-container">
       <button id="startCall">Start Call</button>

@@ -1,5 +1,7 @@
 const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
+const localScreen = document.getElementById('localScreen');
+const remoteScreen = document.getElementById('remoteScreen');
 let localStream;
 let remoteStream;
 let peerConnection;
