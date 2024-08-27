@@ -104,22 +104,29 @@ function createPeerConnection() {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
-    console.log("received remote track...")
+    console.log("Received remote track...");
     if (!remoteStream) {
       remoteStream = new MediaStream();
       remoteVideo.srcObject = remoteStream;
     }
     remoteStream.addTrack(event.track);
+
+    // Ensure that the remote stream is being displayed
+    if (remoteVideo.srcObject !== remoteStream) {
+      console.log("Updating remote video element...");
+      remoteVideo.srcObject = remoteStream;  // Ensure the video element is updated with the new stream
+    }
   };
 
   // Handle ICE candidates
   peerConnection.onicecandidate = (event) => {
-    console.log("received ice candidate...")
+    console.log("Received ICE candidate...");
     if (event.candidate) {
       socket.emit('ice-candidate', event.candidate, room);
     }
   };
 }
+
 
 // Handle incoming offer
 socket.on('offer', (offer) => {
@@ -191,4 +198,5 @@ socket.on('call-ended', () => {
   console.log('Call was ended by the other party.');
   // Handle UI updates, cleanup, or any other necessary actions
   remoteVideo.srcObject = null;
+  remoteStream = null;  // Reset the remote stream
 });
