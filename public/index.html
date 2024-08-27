@@ -28,10 +28,14 @@
         object-fit: cover;
         background-color: black;
       }
-      button {
+      .button-container {
         position: absolute;
         bottom: 20px;
         left: 20px;
+        display: flex;
+        gap: 10px; /* Adds space between buttons */
+      }
+      button {
         padding: 10px;
         font-size: 16px;
         z-index: 10;
@@ -41,7 +45,12 @@
   <body>
     <video id="remoteVideo" autoplay playsinline></video>
     <video id="localVideo" autoplay muted playsinline></video>
-    <button id="startCall">Start Call</button>
+
+    <div class="button-container">
+      <button id="startCall">Start Call</button>
+      <button id="endCall">End Call</button>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
   </body>
