@@ -4,17 +4,19 @@
     <title>WebRTC Video Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-      }
-      /* Parent container that holds the remote video and the video container */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* Parent container that holds the remote video and the video container */
 .parentContainer {
   display: flex;
   height: 100vh;
   width: 100vw;
+  flex-direction: row; /* Default is side-by-side on larger screens */
 }
 
 /* Remote video will take the remaining space */
@@ -47,30 +49,66 @@
   object-fit: cover;
 }
 
-      .top-button-container {
-        position: absolute;
-        top: 0px;
-        left: 20px;
-        display: flex;
-        gap: 10px; /* Adds space between buttons */
-      }
-      .button-container {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        display: flex;
-        gap: 10px; /* Adds space between buttons */
-      }
-      button {
-        padding: 10px;
-        font-size: 16px;
-        z-index: 10;
-      }
+/* Button container at the top */
+.top-button-container {
+  position: absolute;
+  overflow-x: auto; /* Horizontal scrolling for videos */
+  overflow-y: hidden; /* No vertical scrolling */
+  top: 0px;
+  left: 20px;
+  display: flex;
+  gap: 10px; /* Adds space between buttons */
+}
+
+/* Button styles */
+button {
+  padding: 10px;
+  font-size: 16px;
+  z-index: 10;
+}
+
+/* Responsive design for mobile devices in portrait mode */
+@media (max-width: 768px) and (orientation: portrait) {
+  .parentContainer {
+    flex-direction: column; /* Stack the video container below the remote video */
+  }
+
+  .videoContainer {
+    width: 100%; /* Full width for the video container */
+    height: auto; /* Allow the height to adjust based on content */
+    flex-direction: row; /* Stack videos horizontally */
+    justify-content: flex-start;
+    align-items: center;
+    overflow-x: auto; /* Horizontal scrolling for videos */
+    overflow-y: hidden; /* No vertical scrolling */
+    padding: 5px;
+  }
+
+  .thumbnail {
+    width: 150px; /* Smaller width for thumbnails on mobile */
+    margin-bottom: 0; /* Remove bottom margin since videos are now horizontal */
+    margin-right: 10px; /* Add space between videos */
+  }
+
+  .top-button-container {
+    left: 10px; /* Adjust button positioning for smaller screens */
+    overflow-x: auto; /* Horizontal scrolling for videos */
+    overflow-y: hidden; /* No vertical scrolling */
+  }
+
+  button {
+    padding: 8px;
+    font-size: 14px; /* Slightly smaller buttons on mobile */
+  }
+}
+
     </style>
   </head>
   <body>
     <div class="top-button-container">
       <button id="shareScreen">Share Screen</button>
+      <button id="startCall">Start Call</button>
+      <button id="endCall">End Call</button>
     </div>
 
     <!-- Parent container holding the remote video and the video container -->
@@ -85,12 +123,6 @@
       <video id="localVideo" class="thumbnail" autoplay muted playsinline></video>
     </div>
   </div>
-
-
-    <div class="button-container">
-      <button id="startCall">Start Call</button>
-      <button id="endCall">End Call</button>
-    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
