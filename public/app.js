@@ -40,6 +40,41 @@ document.getElementById('startCall').addEventListener('click', () => {
   }
 });
 
+document.getElementById('shareScreen').addEventListener('click', () => {
+  if (!peerConnection) {
+    alert("You must be in a call to share your screen!");
+    return;
+  }
+
+  navigator.mediaDevices.getDisplayMedia({ video: true })
+    .then(screenStream => {
+      console.log("Screen sharing started...");
+      localScreen.srcObject = screenStream;
+
+      // Replace the video track with the screen-sharing track
+      const screenTrack = screenStream.getVideoTracks()[0];
+      const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+      sender.replaceTrack(screenTrack);
+
+      // Listen for the end of screen sharing
+      screenTrack.onended = () => {
+        console.log("Screen sharing ended, reverting to camera...");
+        localScreen.srcObject = null; // Clear the local screen element
+        // Revert to camera when screen sharing ends
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+          .then(stream => {
+            localStream = stream;
+            localVideo.srcObject = stream;
+            const videoTrack = localStream.getVideoTracks()[0];
+            sender.replaceTrack(videoTrack);
+          });
+      };
+    })
+    .catch(error => {
+      console.error('Error accessing display media.', error);
+    });
+});
+
 function startCall() {
   console.log("Starting call on Device B...");
   if (peerConnection) {
@@ -83,11 +118,18 @@ function endCall() {
     // Clear video elements
     localVideo.srcObject = null;
     remoteVideo.srcObject = null;
+    localScreen.srcObject = null;
+    remoteScreen.srcObject = null;
 
     // Stop all tracks in local stream
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
       localStream = null;  // Reset localStream to null
+    }
+
+    if (localScreen.srcObject) {
+      localScreen.srcObject.getTracks().forEach(track => track.stop());
+      localScreen.srcObject = null;
     }
 
     // Reset the ICE candidate queue and other state
@@ -100,23 +142,29 @@ function endCall() {
   }
 }
 
-
 function createPeerConnection() {
   peerConnection = new RTCPeerConnection(configuration);
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
     console.log("Received remote track...");
-    if (!remoteStream) {
-      remoteStream = new MediaStream();
-      remoteVideo.srcObject = remoteStream;
-    }
-    remoteStream.addTrack(event.track);
 
-    // Ensure that the remote stream is being displayed
-    if (remoteVideo.srcObject !== remoteStream) {
-      console.log("Updating remote video element...");
-      remoteVideo.srcObject = remoteStream;  // Ensure the video element is updated with the new stream
+    if (event.track.kind === 'video') {
+      // Check if the track is part of a screen share or camera
+      if (event.track.label.includes("screen")) {
+        if (!remoteScreen.srcObject) {
+          remoteScreen.srcObject = new MediaStream();
+        }
+        remoteScreen.srcObject.addTrack(event.track);
+        console.log("Screen sharing track received...");
+      } else {
+        if (!remoteStream) {
+          remoteStream = new MediaStream();
+          remoteVideo.srcObject = remoteStream;
+        }
+        remoteStream.addTrack(event.track);
+        console.log("Camera video track received...");
+      }
     }
   };
 
@@ -128,7 +176,6 @@ function createPeerConnection() {
     }
   };
 }
-
 
 // Handle incoming offer
 socket.on('offer', (offer) => {
