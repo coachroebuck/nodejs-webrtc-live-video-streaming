@@ -18,6 +18,39 @@ const configuration = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
 };
 
+// Start Call Button
+document.getElementById('startCall').addEventListener('click', () => {
+  onStartCall();
+});
+
+document.getElementById('shareScreen').addEventListener('click', () => {
+    onShareScreen();
+});
+
+// End Call Button
+document.getElementById('endCall').addEventListener('click', () => {
+  endCall();
+});
+
+// Handle incoming offer
+socket.on('offer', (offer) => {
+    onOfferReceived(offer);
+});
+
+// Handle incoming answer
+socket.on('answer', (answer) => {
+    onAnswerReceived(answer);
+});
+
+// Handle ICE candidates
+socket.on('ice-candidate', (candidate) => {
+    onIceCandidate(candidate);
+});
+
+socket.on('call-ended', () => {
+    onCallEnded();
+});
+
 // Get local media stream
 function getLocalStream() {
   return navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -31,49 +64,13 @@ function getLocalStream() {
     });
 }
 
-// Start Call Button
-document.getElementById('startCall').addEventListener('click', () => {
-  if (!isCallActive) {
-    startCall();
-  } else {
-    alert('Call already in progress.');
-  }
-});
-
-document.getElementById('shareScreen').addEventListener('click', () => {
-  if (!peerConnection) {
-    alert("You must be in a call to share your screen!");
-    return;
-  }
-
-  navigator.mediaDevices.getDisplayMedia({ video: true })
-    .then(screenStream => {
-      console.log("Screen sharing started...");
-      localScreen.srcObject = screenStream;
-
-      // Replace the video track with the screen-sharing track
-      const screenTrack = screenStream.getVideoTracks()[0];
-      const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-      sender.replaceTrack(screenTrack);
-
-      // Listen for the end of screen sharing
-      screenTrack.onended = () => {
-        console.log("Screen sharing ended, reverting to camera...");
-        localScreen.srcObject = null; // Clear the local screen element
-        // Revert to camera when screen sharing ends
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-          .then(stream => {
-            localStream = stream;
-            localVideo.srcObject = stream;
-            const videoTrack = localStream.getVideoTracks()[0];
-            sender.replaceTrack(videoTrack);
-          });
-      };
-    })
-    .catch(error => {
-      console.error('Error accessing display media.', error);
-    });
-});
+function onStartCall() {
+    if (!isCallActive) {
+        startCall();
+    } else {
+        alert('Call already in progress.');
+    }
+}
 
 function startCall() {
   console.log("Starting call on Device B...");
@@ -104,10 +101,40 @@ function startCall() {
   });
 }
 
-// End Call Button
-document.getElementById('endCall').addEventListener('click', () => {
-  endCall();
-});
+function onShareScreen() {
+    if (!peerConnection) {
+        alert("You must be in a call to share your screen!");
+        return;
+    }
+
+    navigator.mediaDevices.getDisplayMedia({ video: true })
+    .then(screenStream => {
+        console.log("Screen sharing started...");
+        localScreen.srcObject = screenStream;
+
+        // Replace the video track with the screen-sharing track
+        const screenTrack = screenStream.getVideoTracks()[0];
+        const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+        sender.replaceTrack(screenTrack);
+
+        // Listen for the end of screen sharing
+        screenTrack.onended = () => {
+            console.log("Screen sharing ended, reverting to camera...");
+            localScreen.srcObject = null; // Clear the local screen element
+            // Revert to camera when screen sharing ends
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                localVideo.srcObject = stream;
+                const videoTrack = localStream.getVideoTracks()[0];
+                sender.replaceTrack(videoTrack);
+            });
+        };
+    })
+    .catch(error => {
+        console.error('Error accessing display media.', error);
+    });
+}
 
 function endCall() {
   if (peerConnection) {
@@ -177,8 +204,16 @@ function createPeerConnection() {
   };
 }
 
-// Handle incoming offer
-socket.on('offer', (offer) => {
+// Process the ICE candidate queue after setting the remote description
+function processIceCandidates() {
+  iceCandidateQueue.forEach(candidate => {
+    peerConnection.addIceCandidate(candidate)
+      .catch(error => console.error('Error adding ICE candidate:', error));
+  });
+  iceCandidateQueue = [];  // Clear the queue after processing
+}
+
+function onOfferReceived(offer) {
   console.log('Offer received:', offer);
   createPeerConnection();  // Create peer connection
 
@@ -207,45 +242,34 @@ socket.on('offer', (offer) => {
       isCallActive = true;
     })
     .catch(error => console.error('Error during answer creation:', error));
-});
-
-// Handle incoming answer
-socket.on('answer', (answer) => {
-  peerConnection.setRemoteDescription(answer)
-    .then(() => {
-        processIceCandidates();
-      console.log('Answer received and remote description set.');
-    })
-    .catch(error => console.error('Error setting remote description:', error));
-});
-
-// Handle ICE candidates
-socket.on('ice-candidate', (candidate) => {
-  const iceCandidate = new RTCIceCandidate(candidate);
-
-  if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
-    console.log("adding ICE candidate...")
-    peerConnection.addIceCandidate(iceCandidate)
-      .catch(error => console.error('Error adding ICE candidate:', error));
-  } else {
-    // Queue ICE candidate until remote description is set
-    console.log("queue ICE candidate until remote description has been set...")
-    iceCandidateQueue.push(iceCandidate);
-  }
-});
-
-// Process the ICE candidate queue after setting the remote description
-function processIceCandidates() {
-  iceCandidateQueue.forEach(candidate => {
-    peerConnection.addIceCandidate(candidate)
-      .catch(error => console.error('Error adding ICE candidate:', error));
-  });
-  iceCandidateQueue = [];  // Clear the queue after processing
 }
 
-socket.on('call-ended', () => {
-  console.log('Call was ended by the other party.');
-  // Handle UI updates, cleanup, or any other necessary actions
-  remoteVideo.srcObject = null;
-  remoteStream = null;  // Reset the remote stream
-});
+function onAnswerReceived(answer) {
+    peerConnection.setRemoteDescription(answer)
+    .then(() => {
+        processIceCandidates();
+        console.log('Answer received and remote description set.');
+    })
+    .catch(error => console.error('Error setting remote description:', error));
+}
+
+function onIceCandidate(candidate) {
+    const iceCandidate = new RTCIceCandidate(candidate);
+
+    if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+        console.log("adding ICE candidate...")
+        peerConnection.addIceCandidate(iceCandidate)
+        .catch(error => console.error('Error adding ICE candidate:', error));
+    } else {
+        // Queue ICE candidate until remote description is set
+        console.log("queue ICE candidate until remote description has been set...")
+        iceCandidateQueue.push(iceCandidate);
+    }
+}
+
+function onCallEnded() {
+    console.log('Call was ended by the other party.');
+    // Handle UI updates, cleanup, or any other necessary actions
+    remoteVideo.srcObject = null;
+    remoteStream = null;  // Reset the remote stream
+}
