@@ -177,6 +177,11 @@ function endCall() {
     iceCandidateQueue = [];
     remoteStream = null;  // Reset the remote stream
 
+    const allChildren = Array.from(videoContainer.children);
+    const childrenExceptFirstTwo = allChildren.slice(2);
+
+    childrenExceptFirstTwo.forEach(child => child.remove());
+
     isCallActive = false;
     socket.emit('end-call', room);  // Notify the server that the call ended
     console.log("call ended...");
@@ -190,23 +195,49 @@ function createPeerConnection(socketId) {
   peerConnection.ontrack = (event) => {
     console.log("Received remote track...");
 
-    if (event.track.kind === 'video') {
-      // Check if the track is part of a screen share or camera
-      if (event.track.label.includes("screen")) {
-        if (!primaryRemoteVideo.srcObject) {
-          primaryRemoteVideo.srcObject = new MediaStream();
-        }
-        primaryRemoteVideo.srcObject.addTrack(event.track);
-        console.log("Screen sharing track received...");
-      } else {
-        if (!remoteStream) {
-          remoteStream = new MediaStream();
-          primaryRemoteVideo.srcObject = remoteStream;
-        }
-        remoteStream.addTrack(event.track);
-        console.log("Camera video track received...");
-      }
+    // Dynamically create a new video element
+    let isSharingScreen = event.track.label.includes("screen");
+    let identifier = isSharingScreen ? `remoteVideo_${socketId}_screen` : `remoteVideo_${socketId}_video`;
+    let videoElement = document.getElementById(identifier);
+
+
+    if (!videoElement) {
+        let newVideoElement = document.createElement("video");
+        // Set attributes for the video element
+        newVideoElement.id = identifier;
+        newVideoElement.className = "thumbnail";
+        newVideoElement.autoplay = true;
+        newVideoElement.playsInline = true;
+
+        // Append the new video element to the video container
+        videoContainer.appendChild(newVideoElement);
+        videoElement = newVideoElement;
     }
+
+    if (!videoElement || !videoElement.srcObject) {
+        videoElement.srcObject = new MediaStream();
+    }
+
+    // Add the incoming track to the video element's MediaStream
+    videoElement.srcObject.addTrack(event.track);
+
+//    if (event.track.kind === 'video') {
+//      // Check if the track is part of a screen share or camera
+//      if (event.track.label.includes("screen")) {
+//        if (!newVideoElement.srcObject) {
+//          newVideoElement.srcObject = new MediaStream();
+//        }
+//        newVideoElement.srcObject.addTrack(event.track);
+//        console.log("Screen sharing track received...");
+//      } else {
+//        if (!remoteStream) {
+//          remoteStream = new MediaStream();
+//          newVideoElement.srcObject = remoteStream;
+//        }
+//        remoteStream.addTrack(event.track);
+//        console.log("Camera video track received...");
+//      }
+//    }
   };
 
   // Handle ICE candidates
@@ -227,12 +258,12 @@ function processIceCandidates() {
   iceCandidateQueue = [];  // Clear the queue after processing
 }
 
-function onOfferReceived(offer) {
 function onReadyToCall(socketId) {
 }
 
+function onOfferReceived(offer, socketId) {
   console.log('Offer received:', offer);
-  createPeerConnection();  // Create peer connection
+  createPeerConnection(socketId);  // Create peer connection
 
   peerConnection.setRemoteDescription(offer)
     .then(() => {
@@ -284,9 +315,21 @@ function onIceCandidate(candidate) {
     }
 }
 
-function onCallEnded() {
-    console.log('Call was ended by the other party.');
+function onCallEnded(socketId) {
+    console.log(`Socket ID ${socketId} Ended Call...`);
     // Handle UI updates, cleanup, or any other necessary actions
     primaryRemoteVideo.srcObject = null;
     remoteStream = null;  // Reset the remote stream
+
+    let identifier = `remoteVideo_${socketId}_screen`;
+    let videoElement = document.getElementById(identifier);
+
+    if(videoElement) {
+        videoElement.remove();
+    }
+    identifier = `remoteVideo_${socketId}_video`;
+    videoElement = document.getElementById(identifier);
+    if(videoElement) {
+        videoElement.remove();
+    }
 }
