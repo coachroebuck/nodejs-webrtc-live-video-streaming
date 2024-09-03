@@ -1,5 +1,5 @@
 const localVideo = document.getElementById('localVideo');
-const remoteVideo = document.getElementById('remoteVideo');
+const primaryRemoteVideo = document.getElementById('primaryRemoteVideo');
 const localScreen = document.getElementById('localScreen');
 const remoteScreen = document.getElementById('remoteScreen');
 let localStream;
@@ -144,7 +144,7 @@ function endCall() {
 
     // Clear video elements
     localVideo.srcObject = null;
-    remoteVideo.srcObject = null;
+    primaryRemoteVideo.srcObject = null;
     localScreen.srcObject = null;
     remoteScreen.srcObject = null;
 
@@ -187,7 +187,7 @@ function createPeerConnection() {
       } else {
         if (!remoteStream) {
           remoteStream = new MediaStream();
-          remoteVideo.srcObject = remoteStream;
+          primaryRemoteVideo.srcObject = remoteStream;
         }
         remoteStream.addTrack(event.track);
         console.log("Camera video track received...");
@@ -270,6 +270,6 @@ function onIceCandidate(candidate) {
 function onCallEnded() {
     console.log('Call was ended by the other party.');
     // Handle UI updates, cleanup, or any other necessary actions
-    remoteVideo.srcObject = null;
+    primaryRemoteVideo.srcObject = null;
     remoteStream = null;  // Reset the remote stream
 }

@@ -20,7 +20,7 @@ body {
 }
 
 /* Remote video will take the remaining space */
-#remoteVideo {
+#primaryRemoteVideo {
   flex: 1; /* This makes the remote video take up the remaining width */
   height: 100vh;
   object-fit: cover;
@@ -114,7 +114,7 @@ button {
     <!-- Parent container holding the remote video and the video container -->
   <div class="parentContainer">
     <!-- Fullscreen remote video (takes remaining width) -->
-    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="primaryRemoteVideo" autoplay playsinline></video>
 
     <!-- Video container with one video per row -->
     <div class="videoContainer">
