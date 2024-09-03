@@ -23,22 +23,22 @@ io.on('connection', (socket) => {
 
     socket.on('offer', (offer, room) => {
         console.log(`User ${socket.id} sent offer...`)
-        socket.to(room).emit('offer', offer);  // Emit to everyone in the room except the sender
+        socket.to(room).emit('offer', offer, socket.id);  // Emit to everyone in the room except the sender
     });
 
     socket.on('answer', (answer, room) => {
         console.log(`User ${socket.id} sent answer...`)
-        socket.to(room).emit('answer', answer);  // Emit to everyone in the room except the sender
+        socket.to(room).emit('answer', answer, socket.id);  // Emit to everyone in the room except the sender
     });
 
     socket.on('ice-candidate', (candidate, room) => {
         console.log(`User ${socket.id} sent Ice Candidate...`)
-        socket.to(room).emit('ice-candidate', candidate);  // Emit to everyone in the room except the sender
+        socket.to(room).emit('ice-candidate', candidate, socket.id);  // Emit to everyone in the room except the sender
     });
 
     socket.on('end-call', (room) => {
         console.log(`User ${socket.id} ended the call in room: ${room}`);
-        socket.to(room).emit('call-ended');
+        socket.to(room).emit('call-ended', socket.id);
     });
 
     socket.on('disconnect', () => {
