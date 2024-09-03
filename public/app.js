@@ -160,7 +160,7 @@ function endCall() {
     localVideo.srcObject = null;
     primaryRemoteVideo.srcObject = null;
     localScreen.srcObject = null;
-    remoteScreen.srcObject = null;
+    primaryRemoteVideo.srcObject = null;
 
     // Stop all tracks in local stream
     if (localStream) {
@@ -193,10 +193,10 @@ function createPeerConnection(socketId) {
     if (event.track.kind === 'video') {
       // Check if the track is part of a screen share or camera
       if (event.track.label.includes("screen")) {
-        if (!remoteScreen.srcObject) {
-          remoteScreen.srcObject = new MediaStream();
+        if (!primaryRemoteVideo.srcObject) {
+          primaryRemoteVideo.srcObject = new MediaStream();
         }
-        remoteScreen.srcObject.addTrack(event.track);
+        primaryRemoteVideo.srcObject.addTrack(event.track);
         console.log("Screen sharing track received...");
       } else {
         if (!remoteStream) {
