@@ -46,6 +46,10 @@ function createSocketEventListeners() {
         onOfferReceived(offer, socketId);
     });
 
+    socket.on('ready-to-call', (socketId) => {
+        onReadyToCall(socketId);
+    });
+
     // Handle incoming answer
     socket.on('answer', (answer, socketId) => {
         onAnswerReceived(answer, socketId);
@@ -179,7 +183,7 @@ function endCall() {
   }
 }
 
-function createPeerConnection() {
+function createPeerConnection(socketId) {
   peerConnection = new RTCPeerConnection(configuration);
 
   // Handle remote stream
@@ -224,6 +228,9 @@ function processIceCandidates() {
 }
 
 function onOfferReceived(offer) {
+function onReadyToCall(socketId) {
+}
+
   console.log('Offer received:', offer);
   createPeerConnection();  // Create peer connection
 
