@@ -2,11 +2,14 @@ const localVideo = document.getElementById('localVideo');
 const primaryRemoteVideo = document.getElementById('primaryRemoteVideo');
 const localScreen = document.getElementById('localScreen');
 const remoteScreen = document.getElementById('remoteScreen');
+const videoContainer = document.getElementById("videoContainer");
 let localStream;
 let remoteStream;
 let peerConnection;
 let isCallActive = false;
 let iceCandidateQueue = [];  // Queue for storing ICE candidates until the remote description is set
+let peerConnections = {};
+let iceCandidateQueues = {};
 
 const socket = io();
 const room = "testing"; //prompt("Enter room name:");  // Prompt user to enter a room name
@@ -18,38 +21,45 @@ const configuration = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
 };
 
-// Start Call Button
-document.getElementById('startCall').addEventListener('click', () => {
-  onStartCall();
-});
+createHtmlEventListeners();
+createSocketEventListeners();
 
-document.getElementById('shareScreen').addEventListener('click', () => {
-    onShareScreen();
-});
+function createHtmlEventListeners() {
+    // Start Call Button
+    document.getElementById('startCall').addEventListener('click', () => {
+      onStartCall();
+    });
 
-// End Call Button
-document.getElementById('endCall').addEventListener('click', () => {
-  endCall();
-});
+    document.getElementById('shareScreen').addEventListener('click', () => {
+        onShareScreen();
+    });
 
-// Handle incoming offer
-socket.on('offer', (offer) => {
-    onOfferReceived(offer);
-});
+    // End Call Button
+    document.getElementById('endCall').addEventListener('click', () => {
+      endCall();
+    });
+}
 
-// Handle incoming answer
-socket.on('answer', (answer) => {
-    onAnswerReceived(answer);
-});
+function createSocketEventListeners() {
+    // Handle incoming offer
+    socket.on('offer', (offer, socketId) => {
+        onOfferReceived(offer, socketId);
+    });
 
-// Handle ICE candidates
-socket.on('ice-candidate', (candidate) => {
-    onIceCandidate(candidate);
-});
+    // Handle incoming answer
+    socket.on('answer', (answer, socketId) => {
+        onAnswerReceived(answer, socketId);
+    });
 
-socket.on('call-ended', () => {
-    onCallEnded();
-});
+    // Handle ICE candidates
+    socket.on('ice-candidate', (candidate, socketId) => {
+        onIceCandidate(candidate, socketId);
+    });
+
+    socket.on('call-ended', (socketId) => {
+        onCallEnded(socketId);
+    });
+}
 
 // Get local media stream
 function getLocalStream() {
